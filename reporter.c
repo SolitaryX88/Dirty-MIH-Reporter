@@ -16,33 +16,38 @@
 #include <mysql/mysql.h>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 #define MAX_QUERY 512
 #define signal 1
 
-#define DEBUG
+//#define DEBUG
 
 double get_bandwidth();
 double rnd_signal();
 void init_bw();
-void report_to_db();
+void report_to_db(double bw, double signal_rec);
 void trace_file();
-int connect_to_db();
+void connect_to_db();
 
 MYSQL *db_conn;
 MYSQL_RES *result;
 int query_len;
 char db_query[MAX_QUERY];
 
-const char* db_user = "receiver";
+const char* db_user = "mane";
 const char* db_pass = "epc";
 const char* db = "andsf_db";
 const char* db_ip = "192.168.1.134";
 
+const char* sql_update_client_stat = "UPDATE s14_clients_mobility SET `wireless_type` = '%s', `throughput` = %f, `signal` = %f, `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
+
+const int client_id = 46;
+
 const char* rcv_path = "/sys/class/net/eth0/statistics/rx_bytes";
 
 int network_time = 0;
-int trace_exists = 1;
+int trace_exists ;
 unsigned long long prev_bytes = 0;
 
 FILE * fp;
@@ -50,15 +55,16 @@ char network[25] = "WiFi";
 
 int main(int argc, char** argv) {
 
-
 	int my_t = 0;
+
 	if (argc > 1) {
 		fp = fopen(argv[1], "r"); // read mode
 
 		if (fp == NULL) {
 			fprintf(stderr, "Error while opening the file.\n");
 			trace_exists = 0;
-		}
+		}else
+			trace_exists = 1;
 	}
 
 	init_bw();
@@ -158,7 +164,15 @@ double rnd_signal() {
 	return ((double) ((rand() % 600) + 9200) / 100);
 }
 
-void report_to_db() {
+
+void report_to_db(double bw, double signal_rec){
+
+	snprintf(db_query, MAX_QUERY, sql_update_client_stat, network, bw,  signal_rec, client_id);
+
+	if (mysql_query(db_conn, db_query)) {
+		fprintf(stderr, "Mysql_query error %u: %s (2)", mysql_errno(db_conn), mysql_error(db_conn));
+		exit(EXIT_FAILURE); //wait for the program to exit
+	}
 
 }
 
@@ -168,7 +182,6 @@ void connect_to_db() {
 	db_conn = mysql_init(NULL);
 
 	if (db_conn == NULL) {
-		char message[512];
 		fprintf(stderr, "(DB) Error %u: %s\n", mysql_errno(db_conn), mysql_error(db_conn));
 		exit(EXIT_FAILURE);
 	}
@@ -184,7 +197,7 @@ void connect_to_db() {
 	 8. client flag. */
 
 	if (!mysql_real_connect(db_conn, db_ip, db_user, db_pass, db, 0, NULL, 0)) {
-		fprintf(stderr, 512, "(DB) mysql_real_connect error %u: %s\n", mysql_errno(db_conn), mysql_error(db_conn));
+		fprintf(stderr, "(DB) mysql_real_connect error %u: %s\n", mysql_errno(db_conn), mysql_error(db_conn));
 		exit(EXIT_FAILURE);
 	}
 
