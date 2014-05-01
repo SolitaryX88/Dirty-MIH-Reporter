@@ -44,7 +44,7 @@ const char* sql_update_client_stat = "UPDATE s14_clients_mobility SET `wireless_
 
 const int client_id = 46;
 
-const char* rcv_path = "/sys/class/net/eth0/statistics/rx_bytes";
+const char* rcv_path = "/sys/class/net/eth1/statistics/rx_bytes";
 
 int network_time = 0;
 int trace_exists ;

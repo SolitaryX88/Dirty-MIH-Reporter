@@ -3,11 +3,11 @@ COUNTER=0
 while [  $COUNTER -lt 10 ]; do
 	echo Calculating and updating the database
 	mysql -u mane --password="epc" -h 192.168.1.134 -e "	USE andsf_db; \
-			  					UPDATE s14_network_nodes SET network_load = (SELECT (SELECT IFNULL(SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi/LTE')/1.5 + (SELECT IFNULL(SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi') AS WIFI_BW) WHERE name = 'WiFi'; \
-			  UPDATE s14_network_nodes SET network_load = (SELECT (SELECT IFNULL(SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi/LTE')/3 + (SELECT IFNULL(SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'LTE') AS LTE_BW)  WHERE name = 'LTE';\
-			  UPDATE s14_network_nodes SET network_load = (SELECT IFNULL(SUM(throughput),0.0002) AS WiFi2_BW FROM s14_clients_mobility WHERE wireless_type = 'WiFi-2') WHERE name = 'WiFi-2';"
+			  					UPDATE s14_network_nodes SET network_load = (SELECT (SELECT IFNULL(0.3+SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi/LTE')/1.5 + (SELECT IFNULL(0.3+SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi') AS WIFI_BW) WHERE name = 'WiFi'; \
+			  UPDATE s14_network_nodes SET network_load = (SELECT (SELECT IFNULL(0.3+SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'WiFi/LTE')/3 + (SELECT IFNULL(0.3+SUM(throughput), 0.0002) FROM s14_clients_mobility WHERE wireless_type = 'LTE') AS LTE_BW)  WHERE name = 'LTE';\
+			  UPDATE s14_network_nodes SET network_load = (SELECT IFNULL(0.3+SUM(throughput),0.0002) AS WiFi2_BW FROM s14_clients_mobility WHERE wireless_type = 'WiFi-2') WHERE name = 'WiFi-2';"
 
-	sleep 0.3;
+	sleep 0.1;
 done
 
 
