@@ -9,9 +9,7 @@
 #include "etc.h"
 #include "reporter.h"
 
-#ifndef DEBUG_REP
 #include "db.h"
-#endif
 
 #ifdef VIRT
 
@@ -36,6 +34,10 @@ int client_id = 46;
 
 int main(int argc, char** argv) {
 
+
+	db_init_connect();
+
+
 	if (argc > 1) {
 		fp = fopen(argv[1], "r"); // read mode
 
@@ -48,9 +50,6 @@ int main(int argc, char** argv) {
 
 	rep_init_bw();
 
-#ifndef DEBUG_REP
-	db_init_connect();
-#endif
 #ifdef VIRT
 	srv_init();
 #endif

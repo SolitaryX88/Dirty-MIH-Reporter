@@ -24,6 +24,8 @@ const char* db_ip = "192.168.1.134";
 
 //TODO P-thread of database;
 
+pthread_mutex_t mutex_db;
+
 void db_init_connect() {
 
 	/*Obtain a connection handler*/
@@ -50,12 +52,19 @@ void db_init_connect() {
 		exit(EXIT_FAILURE);
 	}
 
+   if (pthread_mutex_init(&mutex_db, NULL) != 0)
+   {
+       fprintf(stderr, "(%s) Mutex DB init failed\n", __FUNCTION__);
+
+   }
+
 }
 
 const char* sql_update_full_client_stat =
       "UPDATE s14_clients_mobility SET `wireless_type` = '%s', `throughput` = %f, `signal` = %f, `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
 
 void db_full_client_report(double *bw, double * signal_rec, int * client_id, char * net) {
+   pthread_mutex_lock(&mutex_db);
 
 	char db_query[MAX_QUERY];
 
@@ -69,16 +78,17 @@ void db_full_client_report(double *bw, double * signal_rec, int * client_id, cha
 	}
 
 #else
-	fprintf(stdout, "(%s) Query req: %s" ,__FUNCTION__, db_query );
+	fprintf(stdout, "(%s) Query req: %s\n" ,__FUNCTION__, db_query );
 #endif
 
+	pthread_mutex_unlock(&mutex_db);
 }
 
 const char* sql_update_client_bw =
       "UPDATE s14_clients_mobility SET `throughput` = %f, `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
 
 void db_update_client_bw(int * client_id, double *bw) {
-
+	pthread_mutex_lock(&mutex_db);
 	char db_query[MAX_QUERY];
 
 	snprintf(db_query, MAX_QUERY, sql_update_client_bw, *bw, *client_id);
@@ -91,18 +101,21 @@ void db_update_client_bw(int * client_id, double *bw) {
 	}
 
 #else
-	fprintf(stdout, "(%s) Query req: %s" ,__FUNCTION__, db_query );
+	fprintf(stdout, "(%s) Query req: %s\n" ,__FUNCTION__, db_query );
 #endif
+	pthread_mutex_unlock(&mutex_db);
+
 }
 
 const char* sql_update_client_net =
       "UPDATE s14_clients_mobility SET `wireless_type` = '%s', `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
 
 void db_update_client_network(int * client_id, char * network) {
+	pthread_mutex_lock(&mutex_db);
 
 	char db_query[MAX_QUERY];
 
-	snprintf(db_query, MAX_QUERY, sql_update_client_bw, network, *client_id);
+	snprintf(db_query, MAX_QUERY, sql_update_client_net, network, *client_id);
 
 #ifndef DEBUG_DB
 
@@ -113,9 +126,10 @@ void db_update_client_network(int * client_id, char * network) {
 
 #else
 
-	fprintf(stdout, "(%s) Query req: %s" ,__FUNCTION__, db_query );
+	fprintf(stdout, "(%s) Query req: %s\n" ,__FUNCTION__, db_query );
 
 #endif
+	pthread_mutex_unlock(&mutex_db);
 
 }
 

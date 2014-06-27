@@ -23,8 +23,8 @@
 #define ERROR   1
 
 #define DEBUG_REP
-//#define DEBUG_DB
-#define DEBUG_SKT
+#define DEBUG_DB
+//#define DEBUG_SKT
 #define VIRT
 
 

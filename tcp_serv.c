@@ -47,6 +47,7 @@ void * srv_tcp_server() {
 		connfd = accept(listenfd, (struct sockaddr*) NULL, NULL);
 		keep = 1;
 		while (keep) {
+			usleep(10*1000);
 			memset(read_buff, '\0', sizeof(read_buff));
 			memset(send_buff, '\0', sizeof(send_buff));
 
@@ -119,10 +120,13 @@ int srv_parse_message(char * msg) {
 	char * w_net;
 	char * order = strtok(msg, s);
 
+	if(order==NULL)
+		goto err;
+
 	if (strcmp("updateBW", order) == 0) {
 
-		client_id = atoi(strtok(msg, s));
-		bw = atof(strtok(msg, s));
+		client_id = atoi(strtok(NULL, s));
+		bw = atof(strtok(NULL, s));
 
 		if ((client_id > 0 && client_id < 1000) && (bw > 0.0 && bw < 100.0)) {
 			db_update_client_bw(&client_id, &bw);
@@ -131,8 +135,8 @@ int srv_parse_message(char * msg) {
 		}
 
 	} else if (strcmp("setNet", order) == 0) {
-		client_id = atoi(strtok(msg, s));
-		w_net = strtok(msg, s);
+		client_id = atoi(strtok(NULL, s));
+		w_net = strtok(NULL, s);
 
 		if ((client_id > 0 && client_id < 1000) && (strcmp(w_net, "WiFi") == 0 || strcmp(w_net, "LTE") == 0)) {
 			db_update_client_network(&client_id, w_net);
