@@ -84,6 +84,32 @@ void db_full_client_report(double *bw, double * signal_rec, int * client_id, cha
 	pthread_mutex_unlock(&mutex_db);
 }
 
+
+const char* sql_update_sgnl_thrght_client_stat =
+      "UPDATE s14_clients_mobility SET `throughput` = %f, `signal` = %f, `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
+
+void db_sgnl_thrght_client_report(double *bw, double * signal_rec, int * client_id) {
+   pthread_mutex_lock(&mutex_db);
+
+	char db_query[MAX_QUERY];
+
+	snprintf(db_query, MAX_QUERY, sql_update_sgnl_thrght_client_stat, *bw, *signal_rec, *client_id);
+
+#ifndef DEBUG_DB
+
+	if (mysql_query(db_conn, db_query)) {
+		fprintf(stderr, "(%s) MySQL error %u: %s (2)", __FUNCTION__, mysql_errno(db_conn), mysql_error(db_conn));
+		exit(EXIT_FAILURE); //wait for the program to exit
+	}
+
+#else
+	fprintf(stdout, "(%s) Query req: %s\n" ,__FUNCTION__, db_query );
+#endif
+
+	pthread_mutex_unlock(&mutex_db);
+}
+
+
 const char* sql_update_client_bw =
       "UPDATE s14_clients_mobility SET `throughput` = %f, `last_update` = CURRENT_TIMESTAMP() WHERE `id` = %d; ";
 

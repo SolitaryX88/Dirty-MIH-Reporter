@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 		fprintf(stdout, " The bw: %f and the rnd signal: %f\n", *rep_get_bandwidth(), *rep_rnd_signal());
 #else
 
-		db_full_client_report(rep_get_bandwidth(), rep_rnd_signal(), &client_id, network);
+		db_sgnl_thrght_client_report(rep_get_bandwidth(), rep_rnd_signal(), &client_id);
 #endif
 
 	}
