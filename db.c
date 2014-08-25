@@ -19,7 +19,7 @@ int query_len;
 const char* db_user = "mane";
 const char* db_pass = "epc";
 const char* db = "andsf_db";
-const char* db_ip = "192.168.1.134";
+const char* db_ip = "localhost";
 
 
 //TODO P-thread of database;
