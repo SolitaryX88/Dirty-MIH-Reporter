@@ -33,7 +33,8 @@ class TCPClient {
 
 	}
 
-	public void end() {
+	public void terminate() {
+		System.out.println("Terminating TCP connection!");
 		System.out.println("Arrivederci!");
 		try {
 			clientSocket.close();
@@ -88,10 +89,4 @@ class TCPClient {
 		}
 	}
 	
-	public static void main(String[] args){
-		
-		
-		
-		
-	}
 }

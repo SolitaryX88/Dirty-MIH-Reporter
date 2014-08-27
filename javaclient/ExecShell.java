@@ -15,6 +15,7 @@ public class ExecShell {
 		try {
 			p = Runtime.getRuntime().exec(command);
 			p.waitFor();
+			System.out.println("Executed command: " + command);
 			BufferedReader reader = new BufferedReader(new InputStreamReader( p.getInputStream()));
 
 			String line = "";
