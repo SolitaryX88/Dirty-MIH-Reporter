@@ -28,6 +28,8 @@ public class VirtReporter {
 	static Scenario scenario = null;
 	static TCPClient tcp = null;
 	
+	static boolean repeat = true;
+	
 	public static void main(String[] args) {
 		
 		 AddShutdownHook hook = new AddShutdownHook();
@@ -49,7 +51,7 @@ public class VirtReporter {
 			e1.printStackTrace();
 		} // tcp client (MAP host, Server Reporter(IP, Port);
 
-		scenario = new Scenario(realClientID, virtClientID, tcp, delays, WiFi, LTE, BGT, ipfw);
+		scenario = new Scenario(realClientID, virtClientID, tcp, delays, WiFi, LTE, BGT, ipfw, repeat);
 
 		// Scenario is executed in a loop;
 		try {
@@ -59,26 +61,26 @@ public class VirtReporter {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
+		
 	}
 	
 	private static class AddShutdownHook {
-
+		
 		public void attachShutDownHook() {
-
+			
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
-
+					
 					System.out.println("Terminating VirtualReporter!");
-
+					
 					scenario.terminate();
 					tcp.terminate();
 				}
 			});
 		}
 	}
-
+	
 	private static void readLogFile(String filename) throws IOException {
 		
 		Wini ini = new Wini(new File(filename));
@@ -91,6 +93,10 @@ public class VirtReporter {
         System.out.println(realClientID +" "+ virtClientID);
         
         Ini.Section scenario = ini.get("scenario");
+        repeat = scenario.get("repeat", boolean.class);
+        if(repeat)
+        	System.out.println("Repeatitive scenario!");
+        
         delays[0] = scenario.get("delay1", int.class);
         delays[1] = scenario.get("delay2", int.class);
         delays[2] = scenario.get("delay3", int.class);
@@ -123,9 +129,7 @@ public class VirtReporter {
 		TCPClient tcp = null;
 		try {
 			tcp = new TCPClient("172.16.64.140", 5100);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (IOException e1) { e1.printStackTrace();
 		} // tcp client (MAP host, Server Reporter(IP, Port);
 		
 		

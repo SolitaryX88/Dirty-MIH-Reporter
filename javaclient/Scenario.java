@@ -8,6 +8,7 @@ public class Scenario {
 	public int WiFi = 25, LTE = 15;
 	private boolean ipfw = false;
 	public double[] BGT = {0.125, 4.925, 11.825}; //Background traffic over time;
+	private boolean repeat = true;
 	private Random r;
 	
 	public Scenario(int real, int virtual, TCPClient tcp ,int[] delays) {
@@ -19,11 +20,12 @@ public class Scenario {
 		
 	}
 	
-	public Scenario(int real, int virtual, TCPClient tcp ,int[] delays, int WiFi, int LTE, double[] BGT, boolean ipfw) {
+	public Scenario(int real, int virtual, TCPClient tcp ,int[] delays, int WiFi, int LTE, double[] BGT, boolean ipfw, boolean repeat) {
 		this(real, virtual, tcp , delays);
 		this.WiFi = WiFi;
 		this.LTE = LTE;
 		this.BGT = BGT;
+		this.repeat = repeat;
 		this.ipfw=ipfw;
 		
 		if (ipfw)
@@ -39,6 +41,15 @@ public class Scenario {
 	}
 		
 	public void terminate(){
+
+		System.out.println("---");
+		try {
+			cl.sendMessage("setNet:" + realClient + ":WiFi:");
+			cl.sendMessage("updateBW:" + virtClient + ":"+BGT[0]+ ":");
+		} catch (IOException e) { e.printStackTrace();
+		}
+		
+		
 		if (ipfw) {
 			System.out.println("Reseting Dummynet!");
 			ExecShell.executeCommand("ipfw -q flush");
@@ -48,12 +59,12 @@ public class Scenario {
 	
 	public void run() throws InterruptedException, IOException {
 
-		while (true) {
+		do {
 			// Initialize
 			Thread.sleep(1000);
 			
 			System.out.println("---");
-			this.cl.sendMessage("setNet:" + realClient + ":WiFi:");
+			cl.sendMessage("setNet:" + realClient + ":WiFi:");
 			cl.sendMessage("updateBW:" + virtClient + ":"+BGT[0]+ ":");
 		
 			if(ipfw){
@@ -100,6 +111,7 @@ public class Scenario {
 			
 			Thread.sleep(del[3] * 1000);		
 			
-		}
+		}while(repeat);
+		
 	}
 }
