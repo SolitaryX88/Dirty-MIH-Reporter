@@ -1,16 +1,18 @@
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 public class Scenario {
 	private TCPClient tcp;
 	private int realClient = 0, virtClient = 0;
 	private int[] delay;
-	public int WiFi = 25, LTE = 15;
+	private int WiFi = 25, LTE = 15;
 	private boolean ipfw = false;
-	public double[] BGT = {0.125, 4.925, 11.825}; //Background traffic over time;
+	private double[] BGT = {0.125, 4.925, 11.825}; //Background traffic over time;
 	private boolean repeat = true;
 	private Random r;
-	
+	public boolean running = true;
+	DecimalFormat precision = new DecimalFormat("###.##");
 	
 	public Scenario(int real, int virtual, TCPClient tcp ,int[] delays, int WiFi, int LTE, double[] BGT, boolean ipfw, boolean repeat) {
 		this.tcp = tcp;
@@ -51,7 +53,9 @@ public class Scenario {
 	
 		
 	public void terminate(){
-
+		
+		running = false;
+		
 		if (ipfw) {
 			System.out.println("Reseting Dummynet!");
 			ExecShell.executeCommand(".\\ipfw -q flush");
@@ -78,11 +82,11 @@ public class Scenario {
 			
 			System.out.println("---");
 			tcp.sendMessage("setNet:" + realClient + ":WiFi:");
-			tcp.sendMessage("updateBW:" + virtClient + ":"+BGT[0]+ ":");
+			tcp.sendMessage("updateBW:" + virtClient + ":"+ BGT[0]+ ":");
 		
 			if(ipfw){
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ (WiFi-BGT[0]) +"Mbit/s");
-				System.out.println("ResetIPFW to "+ (WiFi-BGT[0]));
+				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ precision.format((WiFi-BGT[0])) +"Mbit/s");
+				System.out.println("ResetIPFW to "+ precision.format(WiFi-BGT[0]));
 			}
 			
 			Thread.sleep(delay[0] * 1000);
@@ -92,8 +96,8 @@ public class Scenario {
 			tcp.sendMessage("updateBW:" + virtClient + ":"+BGT[1]+ ":");
 			
 			if(ipfw){
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ (WiFi-BGT[1]) +"Mbit/s");
-				System.out.println("ResetIPFW to "+ (WiFi-BGT[1]));
+				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ precision.format((WiFi-BGT[1])) +"Mbit/s");
+				System.out.println("ResetIPFW to "+ precision.format(WiFi-BGT[1]));
 			}
 					
 			Thread.sleep(delay[1] * 1000);
@@ -102,8 +106,8 @@ public class Scenario {
 			System.out.println("---");
 			tcp.sendMessage("updateBW:" + virtClient + ":"+BGT[2]+ ":");
 			if(ipfw){
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ (WiFi-BGT[2]) +"Mbit/s");
-				System.out.println("ResetIPFW to "+ (WiFi-BGT[2]));
+				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ precision.format((WiFi-BGT[2])) +"Mbit/s");
+				System.out.println("ResetIPFW to "+ precision.format(WiFi-BGT[2]));
 			}
 			
 			Thread.sleep(delay[2] * 1000);
@@ -117,7 +121,7 @@ public class Scenario {
 			tcp.sendMessage("setNet:" + realClient + ":LTE:");
 			if(ipfw){
 				ExecShell.executeCommand(".\\ipfw pipe 1 config plr 0.0" );
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ (LTE) +"Mbit/s" );
+				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ precision.format((LTE)) +"Mbit/s" );
 			}
 			
 			System.out.println("Increase to "+ (LTE));

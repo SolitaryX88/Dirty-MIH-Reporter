@@ -36,8 +36,10 @@ public class VirtReporter {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
-					System.out.println("Terminating VirtualReporter!");
-					scenario.terminate();
+					if (scenario.running) {
+						System.out.println("Terminating VirtualReporter!");
+						scenario.terminate();
+					}
 				}
 			});
 		}
