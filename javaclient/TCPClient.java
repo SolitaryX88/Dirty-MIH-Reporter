@@ -14,30 +14,30 @@ class TCPClient {
 
 	public TCPClient(String Host) throws IOException {
 		this.Host = Host;
-		this.init();
 	}
 
 	public TCPClient(String host, int port) throws IOException {
-		this.Host = host;
-		this.port = port;
-		this.init();
+		this(host);
+		this.port = port;	
+	}
+	
+	public TCPClient(Config config) throws IOException{
+		this(config.serverIP, config.port);
 	}
 
-	private void init() throws IOException{
+	public void init() throws IOException{
 
 		this.clientSocket = new Socket(Host, port);
 		this.inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		this.outToServer = new PrintWriter(clientSocket.getOutputStream(), true);
-		this.inFromServer = new BufferedReader(new InputStreamReader(
-				clientSocket.getInputStream()));
+		this.inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
 	}
 
 	public void terminate() {
 		System.out.println("Terminating TCP connection!");
 		System.out.println("Arrivederci!");
-		try {
-			clientSocket.close();
+		try { clientSocket.close();
 		} catch (IOException e) {
 			System.out.println(e);
 		}
