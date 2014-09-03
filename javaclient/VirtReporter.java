@@ -13,21 +13,22 @@ public class VirtReporter {
 		hook.attachShutDownHook();
 		Config config = new Config();
 		
-		if (args.length > 0)
-			try {config.parse(args[0]);} catch (IOException e) { e.printStackTrace(); }
+		try {
+			if (args.length == 1)
+				config.parse(args[0]);
 		
-		if(dbg)
-			dbg();
-		
-		try { tcp = new TCPClient(config);
-		} catch (IOException e1) { e1.printStackTrace();}
+			if (dbg)
+				dbg();
 
-		scenario = new Scenario(config, tcp);
-
-		// Scenario is executed in a loop or once;
-		try { scenario.run();
-		} catch (IOException e1 ) { e1.printStackTrace();
-		} catch (InterruptedException e2) { e2.printStackTrace(); }		
+			try {
+				scenario = new Scenario(config, new TCPClient(config));
+				scenario.execScen();
+			} catch (InterruptedException e2) {
+				e2.printStackTrace();
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 	
 	private static class AddShutdownHook {
@@ -38,7 +39,11 @@ public class VirtReporter {
 				public void run() {
 					if (scenario.running) {
 						System.out.println("Terminating VirtualReporter!");
-						scenario.terminate();
+						try {
+							scenario.terminate();
+						} catch (IOException e) {
+						 e.printStackTrace();
+						}
 					}
 				}
 			});
