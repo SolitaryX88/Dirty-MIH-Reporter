@@ -15,7 +15,7 @@
 
 #include "tcp_serv.h"
 
-const char* rcv_path = "/sys/class/net/eth2/statistics/tx_bytes";
+const char* rcv_path = "/sys/class/net/eth4/statistics/tx_bytes";
 
 #else
 
@@ -64,7 +64,6 @@ int main(int argc, char** argv) {
 #ifdef DEBUG_REP
 		fprintf(stdout, " The bw: %f and the rnd signal: %f\n", *rep_get_bandwidth(), *rep_rnd_signal());
 #else
-
 		db_sgnl_thrght_client_report(rep_get_bandwidth(), rep_rnd_signal(), &client_id);
 #endif
 
