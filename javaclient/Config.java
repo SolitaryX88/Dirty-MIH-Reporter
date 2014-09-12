@@ -16,7 +16,7 @@ public class Config {
 	String serverIP = "192.168.10.15";
 	int port = 5100;
 
-	boolean ipfw = false;
+	boolean tc = false;
 	boolean repeat = true;
 
 	public Config(String filepath) throws IOException {
@@ -45,10 +45,10 @@ public class Config {
         Ini.Section bandwidth = ini.get("bandwidth");
          bw.parse(bandwidth);
         
-        Ini.Section dummynet = ini.get("dummynet");
-         ipfw = dummynet.get("functional", boolean.class);
-         if(ipfw)
-        	System.out.println("Sending commands to Dummynet!");
+        Ini.Section netem = ini.get("netem");
+         tc = netem.get("functional", boolean.class);
+         if(tc)
+        	System.out.println("Sending commands to Network Emulator!");
          
 	}
 
@@ -56,10 +56,10 @@ public class Config {
 	public class bandwidth {
 		public double WiFi = 13;
 		public double LTE = 15;
-		public double none = 0.15;
-		public double min = 4.85;
-		public double med = 9.75;
-		public double max = 14.5;
+		public double noBGT = 0.15;
+		public double minBGT = 4.85;
+		public double medBGT = 9.75;
+		public double maxBGT = 14.5;
 
 		public bandwidth() {
 		}
@@ -72,13 +72,13 @@ public class Config {
 			WiFi = bw.get("WiFi", int.class);
 			LTE = bw.get("LTE", int.class);
 
-			none = bw.get("none", double.class);
-			min = bw.get("min", double.class);
-			med = bw.get("med", double.class);
-			max = bw.get("max", double.class);
+			noBGT = bw.get("none", double.class);
+			minBGT = bw.get("min", double.class);
+			medBGT = bw.get("med", double.class);
+			maxBGT = bw.get("max", double.class);
 
 			System.out.println("BW: " + WiFi + " " + LTE);
-			System.out.println("BGT: " + none + " " + min + " " + med + " " + max);
+			System.out.println("BGT: " + noBGT + " " + minBGT + " " + medBGT + " " + maxBGT);
 		}
 		
 		public String getAvailWiFiBW(double bgt){ return(precision.format(WiFi-bgt)); }

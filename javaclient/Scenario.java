@@ -7,16 +7,16 @@ public class Scenario {
 	public boolean running = true;
 	private Config cfg = null;
 	private long startTime = 0L;
-	
-//	private String realClientNetwork = "";
+
+	//	private String realClientNetwork = "";
 	
 	public Scenario(Config c, TCPClient tcp) {
 		this.cfg = c;
 		this.tcp = tcp;
 		this.r = new Random();
 		
-		if (c.ipfw)
-			initIPFW();
+		if (c.tc)
+			initTC();
 		
 		try { tcp.init();
 		} catch (IOException e) { e.printStackTrace(); }
@@ -26,31 +26,53 @@ public class Scenario {
 	public Scenario(Config c) throws IOException {
 		this(c, new TCPClient(c));
 	}
+	
+	private void limitBW(double bgt, String network){
 
-	private void initIPFW () {
-		ExecShell.executeCommand(".\\ipfw -q flush");
-		ExecShell.executeCommand(".\\ipfw -q pipe flush");
-		ExecShell.executeCommand(".\\ipfw add 1030 pipe 1 ip from any to any");
-		ExecShell.executeCommand(".\\ipfw pipe 1 config bw 100Mbit/s");
+		String end	 = "Mbit allot 1500 prio 5 bounded isolated";
+		String start = "tc class cha dev eth4 parent 1: classid 1:1 cbq rate ";
+
+		if(network.equals("WiFi"))
+		 ExecShell.executeCommand(start + cfg.bw.getAvailWiFiBW(bgt) + end);	
+		else
+		 ExecShell.executeCommand(start + cfg.bw.getAvailLTEBW(bgt) + end);		
+	}
+	
+	private void updateVirtualBandWidthBGT(double bgt) throws IOException{
+		
+		tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+bgt+ ":");
+	}
+	
+	private void initTC () {
+		// Set Network limiter
+		ExecShell.executeCommand("tc del dev eth4 root");
+		ExecShell.executeCommand("tc qdisc add dev eth4 root handle 1: cbq avpkt 1000 bandwidth 100mbit");
+		ExecShell.executeCommand("tc class add dev eth4 parent 1: classid 1:1 cbq rate 100Mbit allot 1500 prio 5 bounded isolated");
+		ExecShell.executeCommand("tc filter add dev eth4 parent 1: protocol ip prio 16 u32 match ip src 192.168.46.1 flowid 1:1");
+		ExecShell.executeCommand("tc qdisc add dev eth4 parent 1:1 sfq perturb 10");
+		
+		// Set PLR Limiter
+		ExecShell.executeCommand("tc qdisc add dev eth1 root netem loss 0.1%");
 	}
 	
 	private void reset() throws IOException {	
 				
 		tcp.sendMessage("setNet:" + cfg.realClientID + ":WiFi:");
 		tcp.sendMessage("setNet:" + cfg.virtClientID+ ":WiFi:");
-		tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+ cfg.bw.none+ ":");
-		if(cfg.ipfw && running) 
-			ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.none) +"Mbit/s");
+		updateVirtualBandWidthBGT( cfg.bw.noBGT);
+		if(cfg.tc && running) 
+			limitBW(cfg.bw.noBGT, "WiFi");
 	}
 	
 	public void terminate() throws IOException{
 		
 		running = false;
 		
-		if (cfg.ipfw) {
-			System.out.println("Reseting Dummynet!");
-			ExecShell.executeCommand(".\\ipfw -q flush");
-			ExecShell.executeCommand(".\\ipfw -q pipe flush");
+		if (cfg.tc) {
+			System.out.println("Reseting NetEm!");
+			ExecShell.executeCommand("tc qdisc del root dev eth4");
+			ExecShell.executeCommand("tc qdisc del root dev eth1");
+
 		}
 
 		System.out.println("---");
@@ -70,20 +92,18 @@ public class Scenario {
 	private void handOverTo(String net, double bgt) throws IOException, InterruptedException{
 	
 		tcp.sendMessage("setNet:" + cfg.realClientID + ":"+ net +":");
-		if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config plr 0.9");
+		if(cfg.tc) 	ExecShell.executeCommand("tc qdisc cha dev eth1 root netem loss 90%");
 				sleep((int) 170 + Math.abs(r.nextInt() % 200) );			
-		if(cfg.ipfw){
-			ExecShell.executeCommand(".\\ipfw pipe 1 config plr 0.0" );
-			if (net.equals("WiFi"))
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(bgt) +"Mbit/s" );
-			else
-				ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailLTEBW(bgt) +"Mbit/s" );
+		if(cfg.tc){
+			ExecShell.executeCommand("tc qdisc cha dev eth1 root netem loss 0.1%");
+			limitBW(bgt, net); 
 		}
 	}
 	
 	private void sleep(int t) throws InterruptedException{
+		
+		System.out.println("----\nSleep for: " + t + "ms\n---");
 		Thread.sleep(t);
-		System.out.println("---");
 	}
 	
 	public void first() throws InterruptedException, IOException {
@@ -109,47 +129,47 @@ public class Scenario {
 			sleep(400);
 			
 			// Minimum of BGT from virtual client added for small time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.med+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.med) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
+			limitBW(cfg.bw.medBGT, "WiFi");
 					
 			sleep(cfg.scen.medTime * 1000);
 			
 			// Medium of BGT from virtual client added 
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.max+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.max) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.medTime * 1000);
 			
 			// Max of BGT from virtual client added 
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.max+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.max) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.medTime * 1000);
 
 			//LTE Handover
-			handOverTo("LTE", cfg.bw.none);
+			handOverTo("LTE", cfg.bw.noBGT);
 		
 			sleep(cfg.scen.medTime * 1000);
 			
 			// Decrease BGT to min
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.med+ ":");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
 			
 			sleep(cfg.scen.smallTime * 1000);
 			
 			// Handover again to WiFi
-			handOverTo("WiFi", cfg.bw.med);
+			handOverTo("WiFi", cfg.bw.medBGT);
 			
 			sleep(cfg.scen.medTime * 1000);
 			
 			// Max of BGT from virtual client added 
 			System.out.println("---");
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.max + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.max) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.smallTime * 1000);
 			
 			//LTE Handover
-			handOverTo("LTE", cfg.bw.none);
+			handOverTo("LTE", cfg.bw.noBGT);
 			
 			sleep(cfg.scen.medTime * 1000);
 			
@@ -174,32 +194,32 @@ public class Scenario {
 			sleep(400);
 
 			// Minimum of BGT from virtual client added for med time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.med + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.med) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
+			limitBW(cfg.bw.medBGT, "WiFi");
 
 			sleep(cfg.scen.medTime * 1000);
 
 			// Med of BGT from virtual client added for med time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.max + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.max) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.largeTime * 1000);
 			
 			// Max of BGT from virtual client added for med time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.max + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.max) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.largeTime * 1000);
 			
 			// Med of BGT from virtual client added for med time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.max + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.max) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.largeTime * 1000);
 			
 			// Minimum of BGT from virtual client added for med time
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":" + cfg.bw.med + ":");
-			if (cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw " + cfg.bw.getAvailWiFiBW(cfg.bw.med) + "Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
+			limitBW(cfg.bw.medBGT, "WiFi");
 
 			sleep(cfg.scen.medTime * 1000);
 			
@@ -231,32 +251,32 @@ public class Scenario {
 			sleep(cfg.scen.medTime * 1000);
 			
 			// Minimum of BGT from virtual client added
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.med+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.med) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
+			limitBW(cfg.bw.medBGT, "WiFi");
 					
 			sleep(cfg.scen.largeTime * 1000);
 			
 			// med of BGT from virtual client added
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.med+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.med) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.medBGT);
+			limitBW(cfg.bw.medBGT, "WiFi");
 					
 			sleep(cfg.scen.largeTime * 1000);
 			
 			// Max of BGT from virtual client added
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.max+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailWiFiBW(cfg.bw.max) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.maxBGT);
+			limitBW(cfg.bw.maxBGT, "WiFi");
 
 			sleep(cfg.scen.smallTime * 1000);
 
 			//LTE Handover
-			handOverTo("LTE", cfg.bw.none);
+			handOverTo("LTE", cfg.bw.noBGT);
 			
 			sleep(cfg.scen.largeTime * 1000);		
 			
 			// Medium of BGT from virtual client added in LTE
 			tcp.sendMessage("setNet:" + cfg.virtClientID + ":LTE:");
-			tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+cfg.bw.min+ ":");
-			if(cfg.ipfw) ExecShell.executeCommand(".\\ipfw pipe 1 config bw "+ cfg.bw.getAvailLTEBW(cfg.bw.min) +"Mbit/s");
+			updateVirtualBandWidthBGT(cfg.bw.minBGT);
+			limitBW(cfg.bw.minBGT, "LTE");
 			
 			sleep(cfg.scen.largeTime * 1000);	
 			
