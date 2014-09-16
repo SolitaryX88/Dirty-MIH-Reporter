@@ -38,9 +38,22 @@ public class Scenario {
 		 ExecShell.executeCommand(start + cfg.bw.getAvailLTEBW(bgt) + end);		
 	}
 	
+	private double fluctuator(){
+		
+		return ((double) (Math.abs(r.nextInt() % 20) + 90) / 100);
+	}
+	
 	private void updateVirtualBandWidthBGT(double bgt) throws IOException{
 		
-		tcp.sendMessage("updateBW:" + cfg.virtClientID + ":"+bgt+ ":");
+		bgt = bgt * fluctuator() ;
+		tcp.sendMessage("updateBW:" + cfg.virtClientWiFi + ":"+cfg.format(bgt)+ ":");
+	}
+	
+	private void updateVirtualClientRate(double rate, int clientID) throws IOException {
+		
+		rate = rate * fluctuator() ;
+		tcp.sendMessage("updateBW:" + clientID + ":" + cfg.format(rate) + ":");
+		
 	}
 	
 	private void initTC () {
@@ -58,7 +71,7 @@ public class Scenario {
 	private void reset() throws IOException {	
 				
 		tcp.sendMessage("setNet:" + cfg.realClientID + ":WiFi:");
-		tcp.sendMessage("setNet:" + cfg.virtClientID+ ":WiFi:");
+		tcp.sendMessage("setNet:" + cfg.virtClientWiFi+ ":WiFi:");
 		updateVirtualBandWidthBGT( cfg.bw.noBGT);
 		if(cfg.tc && running) 
 			limitBW(cfg.bw.noBGT, "WiFi");
@@ -85,7 +98,10 @@ public class Scenario {
 		
 		if(cfg.scen.num==1)			this.first();
 		else if(cfg.scen.num==2)	this.second();
-		else 						this.third();
+		else if(cfg.scen.num==3)	this.third();
+		else if(cfg.scen.num==4)	this.withHandOvers();
+		else 						this.withoutHandoOvers();
+		
 		
 	}
 	
@@ -105,6 +121,7 @@ public class Scenario {
 		System.out.println("----\nSleep for: " + t + "ms\n---");
 		Thread.sleep(t);
 	}
+	
 	
 	public void first() throws InterruptedException, IOException {
 		// Real Adaptation
@@ -274,7 +291,7 @@ public class Scenario {
 			sleep(cfg.scen.largeTime * 1000);		
 			
 			// Medium of BGT from virtual client added in LTE
-			tcp.sendMessage("setNet:" + cfg.virtClientID + ":LTE:");
+			tcp.sendMessage("setNet:" + cfg.virtClientWiFi + ":LTE:");
 			updateVirtualBandWidthBGT(cfg.bw.minBGT);
 			limitBW(cfg.bw.minBGT, "LTE");
 			
@@ -286,5 +303,197 @@ public class Scenario {
 		this.terminate();
 	}
 	
+	public void framework() throws InterruptedException, IOException {
+		
+		//Increasing steps of BGT a peak and some decreasing steps.
+		double bgt = 0.0;
+		
+		System.out.println("Executing XXX scenario!");
+		do {
+			startTime = System.currentTimeMillis();
+			// No BGT
+			sleep(400);
+			reset();
+			sleep(400);
+			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			
+			reset();
+			sleep(cfg.scen.smallTime * 1000);
+			
+			System.out.println("Total duration: " + (double)(System.currentTimeMillis() - startTime)/1000);
+		} while (cfg.repeat);
+
+		this.terminate();
+		
+	}
 	
+	public void withoutHandoOvers() throws InterruptedException, IOException {
+		
+		//Increasing steps of BGT a peak and some decreasing steps.
+		double bgt = 0.0;
+		
+		System.out.println("Executing Without Handover scenario!");
+		do {
+			startTime = System.currentTimeMillis();
+			// No BGT
+			sleep(400);
+			reset();
+			sleep(400);
+			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			
+			reset();
+			sleep(cfg.scen.smallTime * 1000);
+			
+			System.out.println("Total duration: " + (double)(System.currentTimeMillis() - startTime)/1000);
+		} while (cfg.repeat);
+
+		this.terminate();
+		
+	}
+	
+public void withHandOvers() throws InterruptedException, IOException {
+		
+		//Increasing steps of BGT a peak and some decreasing steps.
+		double bgt = 0.0;
+		
+		System.out.println("Executing Handover scenario!");
+		do {
+			startTime = System.currentTimeMillis();
+			// No BGT
+			sleep(400);
+			reset();
+			sleep(400);
+			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);
+			
+			// Handover to LTE
+			handOverTo("LTE", cfg.bw.noBGT);
+			sleep(cfg.scen.medTime * 1000);	
+			
+			// 
+			bgt = cfg.bw.maxBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			//limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			// 
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			//limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+
+			//  Handover to WiFi
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			handOverTo("WiFi", bgt);
+			sleep(cfg.scen.medTime * 1000);	
+
+			//
+			bgt = cfg.bw.medBGT * fluctuator();
+			updateVirtualBandWidthBGT(bgt);
+			limitBW(bgt, "WiFi");
+			sleep(cfg.scen.medTime * 1000);			
+			
+			reset();
+			sleep(cfg.scen.smallTime * 1000);
+			
+			System.out.println("Total duration: " + (double)(System.currentTimeMillis() - startTime)/1000);
+		} while (cfg.repeat);
+
+		this.terminate();
+		
+	}
 }

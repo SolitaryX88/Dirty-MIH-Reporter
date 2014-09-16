@@ -11,7 +11,8 @@ public class Config {
 	public bandwidth bw = new bandwidth();
 
 	int realClientID = 46;
-	int virtClientID = 50;
+	int virtClientWiFi = 50;
+	int virtClientLTE = 52;
 
 	String serverIP = "192.168.10.15";
 	int port = 5100;
@@ -36,8 +37,8 @@ public class Config {
         System.out.println("Server: "+serverIP +" "+ port);
         
         realClientID = ini.get("clients", "realClientID", int.class);
-        virtClientID = ini.get("clients", "virtClientID", int.class);
-        System.out.println("Clients: " +realClientID +" "+ virtClientID);
+        virtClientWiFi = ini.get("clients", "virtClientID", int.class);
+        System.out.println("Clients: " +realClientID +" "+ virtClientWiFi);
         
         Ini.Section scenario = ini.get("scenario");
          scen.parse(scenario);
@@ -85,6 +86,8 @@ public class Config {
 		
 		public String getAvailLTEBW(double bgt){ return(precision.format(LTE-bgt)); }
 	}
+	
+	public String format (double val) { return (precision.format(val));}
 
 	public class scenario {
 		public int smallTime = 5;
