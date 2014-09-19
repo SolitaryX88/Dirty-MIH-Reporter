@@ -49,13 +49,6 @@ public class Scenario {
 		tcp.sendMessage("updateBW:" + cfg.virtClientWiFi + ":"+cfg.format(bgt)+ ":");
 	}
 	
-	private void updateVirtualClientRate(double rate, int clientID) throws IOException {
-		
-		rate = rate * fluctuator() ;
-		tcp.sendMessage("updateBW:" + clientID + ":" + cfg.format(rate) + ":");
-		
-	}
-	
 	private void initTC () {
 		// Set Network limiter
 		ExecShell.executeCommand("tc del dev eth4 root");
@@ -414,7 +407,7 @@ public class Scenario {
 			bgt = cfg.bw.maxBGT * fluctuator();
 			updateVirtualBandWidthBGT(bgt);
 			limitBW(bgt, "WiFi");
-			sleep(cfg.scen.medTime * 1000);			
+			sleep(cfg.scen.largeTime * 1000);			
 			// 
 			bgt = cfg.bw.medBGT * fluctuator();
 			updateVirtualBandWidthBGT(bgt);
@@ -422,7 +415,7 @@ public class Scenario {
 			sleep(cfg.scen.medTime * 1000);			
 			
 			reset();
-			sleep(cfg.scen.smallTime * 1000);
+			sleep(400);
 			
 			System.out.println("Total duration: " + (double)(System.currentTimeMillis() - startTime)/1000);
 		} while (cfg.repeat);
@@ -462,7 +455,7 @@ public void withHandOvers() throws InterruptedException, IOException {
 			
 			// Handover to LTE
 			handOverTo("LTE", cfg.bw.noBGT);
-			sleep(cfg.scen.medTime * 1000);	
+			sleep(cfg.scen.largeTime * 1000);	
 			
 			// 
 			bgt = cfg.bw.maxBGT * fluctuator();
@@ -482,13 +475,13 @@ public void withHandOvers() throws InterruptedException, IOException {
 			sleep(cfg.scen.medTime * 1000);	
 
 			//
-			bgt = cfg.bw.medBGT * fluctuator();
+			bgt = cfg.bw.maxBGT * fluctuator();
 			updateVirtualBandWidthBGT(bgt);
 			limitBW(bgt, "WiFi");
 			sleep(cfg.scen.medTime * 1000);			
 			
 			reset();
-			sleep(cfg.scen.smallTime * 1000);
+			sleep(400);
 			
 			System.out.println("Total duration: " + (double)(System.currentTimeMillis() - startTime)/1000);
 		} while (cfg.repeat);
