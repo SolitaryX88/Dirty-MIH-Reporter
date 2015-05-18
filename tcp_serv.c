@@ -52,7 +52,9 @@ void * srv_tcp_server() {
 			memset(send_buff, '\0', sizeof(send_buff));
 
 			if (read(connfd, read_buff, sizeof(read_buff)) < 0) {
-				fprintf(stderr, "(%s) Error reading socket! \n", __FUNCTION__);
+				fprintf(stderr, "(%s) Error reading socket! Resetting virtual client! \n", __FUNCTION__);
+				//"updateBW:50:0.02:")
+				srv_parse_message("updateBW:50:0.02:");
 				keep = 0;
 				break;
 			}
